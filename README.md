@@ -7,9 +7,9 @@
 ![Ngrok](https://img.shields.io/badge/Ngrok-1F1E37?style=for-the-badge&logo=ngrok&logoColor=white)
 ![Free](https://img.shields.io/badge/100%25-FREE-00D26A?style=for-the-badge)
 
-### Get Free Windows Server & RDP Access Using GitHub Actions & Ngrok Tunnel
+### Get Free Windows Server & RDP Access - No Credit Card Required!
 
-*No credit card required • 100% Free • Always Available*
+*Zero payment info • 100% Free • Email signup only (or no signup with LocalTunnel!)*
 
 [📖 Documentation](#-how-it-works) • [🚀 Quick Start](#-quick-start-guide) • [⚡ Features](#-features) • [❓ FAQ](#-faq)
 
@@ -23,12 +23,13 @@
 
 ### ✨ Features
 
-- 🆓 **100% Free** - No credit card required
+- 🆓 **100% Free** - No credit card or payment required
 - ⚡ **Quick Setup** - Get started in under 5 minutes
 - 🔒 **Private & Secure** - Uses your own GitHub account
 - 🔄 **Unlimited Usage** - Create new sessions anytime
 - 💪 **Full RDP Access** - Complete Windows Server control
 - 🌐 **Global Access** - Connect from anywhere
+- 📧 **Email Only** - Just need an email to sign up (or use LocalTunnel with no signup!)
 
 ---
 
@@ -52,11 +53,14 @@
 
 ---
 
-### Step 2️⃣: Setup Ngrok
+### Step 2️⃣: Setup Tunnel Service (Choose One)
 
-1. **Create Ngrok Account**
+#### Option A: Ngrok (Most Popular)
+
+1. **Create Ngrok Account** 
    - Visit: [https://ngrok.com/signup](https://ngrok.com/signup)
-   - Sign up for free
+   - Sign up with email - **NO CREDIT CARD REQUIRED** ✅
+   - Free tier is sufficient for RDP!
 
 2. **Get Your Auth Token**
    - After login, go to: [https://dashboard.ngrok.com/get-started/your-authtoken](https://dashboard.ngrok.com/get-started/your-authtoken)
@@ -69,6 +73,26 @@
    Value: [Paste your ngrok authtoken here]
    ```
    - Click `Add secret`
+
+#### Option B: LocalTunnel (No Account Needed!)
+
+**100% No registration required!** Update your workflow to use LocalTunnel:
+
+```yaml
+- name: Install LocalTunnel
+  run: npm install -g localtunnel
+
+- name: Create Tunnel
+  run: lt --port 3389
+```
+
+*No auth token needed! Just works!*
+
+#### Option C: Cloudflare Tunnel (Free Forever)
+
+1. Sign up at [Cloudflare Zero Trust](https://one.dash.cloudflare.com/)
+2. Get your tunnel token
+3. Use in workflow (example in [Alternative Tunnels](#-alternative-tunnel-services) section)
 
 ---
 
@@ -288,12 +312,98 @@ Edit the workflow file:
 
 ---
 
+## 🌐 Alternative Tunnel Services
+
+### 🔷 LocalTunnel (Zero Setup!)
+
+**No account, no credit card, just works!**
+
+```yaml
+name: CI - LocalTunnel
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Enable Remote Desktop
+      run: Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
+    
+    - name: Enable Firewall Rule
+      run: Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+    
+    - name: Set Authentication
+      run: Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
+    
+    - name: Set User Password
+      run: Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!" -Force)
+    
+    - name: Install LocalTunnel
+      run: npm install -g localtunnel
+    
+    - name: Create Tunnel
+      run: lt --port 3389
+```
+
+### 🔷 Cloudflare Tunnel
+
+**Enterprise-grade, free forever!**
+
+```yaml
+    - name: Download Cloudflared
+      run: |
+        Invoke-WebRequest -Uri "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe" -OutFile "cloudflared.exe"
+    
+    - name: Create Tunnel
+      run: .\cloudflared.exe tunnel --url tcp://localhost:3389
+      env:
+        TUNNEL_TOKEN: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
+```
+
+### 🔷 Pinggy (Simple & Free)
+
+```yaml
+    - name: Download Pinggy
+      run: |
+        Invoke-WebRequest -Uri "https://github.com/Pinggy-io/pinggy-go/releases/latest/download/pinggy_windows_amd64.exe" -OutFile "pinggy.exe"
+    
+    - name: Create Tunnel
+      run: .\pinggy.exe -p 3389 tcp
+```
+
+### 🔷 Serveo (SSH-based)
+
+```yaml
+    - name: Create SSH Tunnel
+      run: ssh -R 3389:localhost:3389 serveo.net
+```
+
+**Comparison Table:**
+
+| Service | Account Required | Credit Card | Limits | Speed |
+|---------|-----------------|-------------|---------|-------|
+| **Ngrok** | Yes (Email only) | ❌ No | 1 tunnel, 40 conn/min | ⚡⚡⚡ |
+| **LocalTunnel** | ❌ No | ❌ No | Unlimited | ⚡⚡ |
+| **Cloudflare** | Yes | ❌ No | Unlimited | ⚡⚡⚡⚡ |
+| **Pinggy** | ❌ No | ❌ No | 60 min sessions | ⚡⚡⚡ |
+| **Serveo** | ❌ No | ❌ No | May be unstable | ⚡⚡ |
+
+---
+
 ## ❓ FAQ
 
 <details>
 <summary><b>Is this really free?</b></summary>
 
-Yes! GitHub Actions provides free minutes for public and private repositories. Ngrok's free tier is sufficient for RDP tunneling.
+Yes! GitHub Actions provides free minutes for public and private repositories. All tunnel services mentioned have free tiers that don't require credit cards.
+
+</details>
+
+<details>
+<summary><b>Do I need a credit card for Ngrok?</b></summary>
+
+**No!** Ngrok's free tier only requires email signup - no credit card needed. If you want zero account setup, use LocalTunnel instead which requires no registration at all!
 
 </details>
 
@@ -396,7 +506,7 @@ If you found this helpful, please give it a star! It helps others discover this 
 
 <div align="center">
 
-### Tpis by me :b 
+### Made with ❤️ for the You :p 
 
 **Happy RDP-ing! 🚀**
 
